@@ -103,6 +103,10 @@ fun SettingsScreen(
     val smsScanAllTime by settingsViewModel.smsScanAllTime.collectAsStateWithLifecycle(initialValue = false)
     val smsScanUseCustomDate by settingsViewModel.smsScanUseCustomDate.collectAsStateWithLifecycle(initialValue = false)
     val smsScanCustomDate by settingsViewModel.smsScanCustomDate.collectAsStateWithLifecycle(initialValue = null)
+    val smsScanUseDays by settingsViewModel.smsScanUseDays.collectAsStateWithLifecycle(initialValue = true)
+    val smsScanDays by settingsViewModel.smsScanDays.collectAsStateWithLifecycle(
+        initialValue = Constants.SmsProcessing.DEFAULT_SCAN_DAYS,
+    )
     val baseCurrency by settingsViewModel.baseCurrency.collectAsStateWithLifecycle(initialValue = "")
     val importExportMessage by settingsViewModel.importExportMessage.collectAsStateWithLifecycle()
     val exportedBackupFile by settingsViewModel.exportedBackupFile.collectAsStateWithLifecycle()
@@ -567,6 +571,7 @@ fun SettingsScreen(
                                 "Scan from a custom start date to today"
                             }
                         }
+                        smsScanUseDays -> "Scan last ${formatSmsScanDaysLabel(smsScanDays)}"
                         else -> "Scan last $smsScanMonths months"
                     },
                     onClick = { showSmsScanDialog = true },
@@ -574,6 +579,7 @@ fun SettingsScreen(
                     trailingText = when {
                         smsScanAllTime -> "All Time"
                         smsScanUseCustomDate -> smsScanCustomDate?.let { formatSmsScanCustomDateShort(it) } ?: "Custom"
+                        smsScanUseDays -> formatSmsScanDaysShort(smsScanDays)
                         else -> "$smsScanMonths mo"
                     }
                 )
@@ -715,6 +721,7 @@ fun SettingsScreen(
 
     // SMS Scan Period Dialog
     if (showSmsScanDialog) {
+        val smsScanPeriodScrollState = rememberScrollState()
         AlertDialog(
             onDismissRequest = { showSmsScanDialog = false },
             title = { Text("SMS Scan Period") },
@@ -728,13 +735,23 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.md))
 
-                    val options = listOf(-1, -2) + listOf(1, 2, 3, 6, 12, 24)
-                    options.forEach { months ->
+                    val dayOptions = listOf(
+                        com.pennywiseai.tracker.core.Constants.SmsProcessing.SCAN_PERIOD_1_DAY,
+                        com.pennywiseai.tracker.core.Constants.SmsProcessing.SCAN_PERIOD_2_DAYS,
+                        com.pennywiseai.tracker.core.Constants.SmsProcessing.SCAN_PERIOD_1_WEEK,
+                    )
+                    val options = listOf(-1, -2) + dayOptions + listOf(1, 2, 3, 6, 12, 24)
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 360.dp)
+                            .verticalScroll(smsScanPeriodScrollState),
+                    ) {
+                        options.forEach { optionId ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    when (months) {
+                                    when (optionId) {
                                         -1 -> {
                                             settingsViewModel.updateSmsScanAllTime(true)
                                             showSmsScanDialog = false
@@ -743,8 +760,13 @@ fun SettingsScreen(
                                             showSmsScanDialog = false
                                             showSmsScanDatePicker = true
                                         }
+                                        in dayOptions -> {
+                                            val days = smsScanPeriodOptionToDays(optionId) ?: return@clickable
+                                            settingsViewModel.updateSmsScanDays(days)
+                                            showSmsScanDialog = false
+                                        }
                                         else -> {
-                                            settingsViewModel.updateSmsScanMonths(months)
+                                            settingsViewModel.updateSmsScanMonths(optionId)
                                             settingsViewModel.updateSmsScanAllTime(false)
                                             showSmsScanDialog = false
                                         }
@@ -753,15 +775,21 @@ fun SettingsScreen(
                                 .padding(vertical = Spacing.sm),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val isSelected = when (months) {
+                            val isSelected = when (optionId) {
                                 -1 -> smsScanAllTime
                                 -2 -> smsScanUseCustomDate && !smsScanAllTime
-                                else -> smsScanMonths == months && !smsScanAllTime && !smsScanUseCustomDate
+                                in dayOptions -> {
+                                    smsScanUseDays &&
+                                        !smsScanAllTime &&
+                                        !smsScanUseCustomDate &&
+                                        smsScanDays == smsScanPeriodOptionToDays(optionId)
+                                }
+                                else -> smsScanMonths == optionId && !smsScanAllTime && !smsScanUseCustomDate && !smsScanUseDays
                             }
                             RadioButton(
                                 selected = isSelected,
                                 onClick = {
-                                    when (months) {
+                                    when (optionId) {
                                         -1 -> {
                                             settingsViewModel.updateSmsScanAllTime(true)
                                             showSmsScanDialog = false
@@ -770,8 +798,13 @@ fun SettingsScreen(
                                             showSmsScanDialog = false
                                             showSmsScanDatePicker = true
                                         }
+                                        in dayOptions -> {
+                                            val days = smsScanPeriodOptionToDays(optionId) ?: return@RadioButton
+                                            settingsViewModel.updateSmsScanDays(days)
+                                            showSmsScanDialog = false
+                                        }
                                         else -> {
-                                            settingsViewModel.updateSmsScanMonths(months)
+                                            settingsViewModel.updateSmsScanMonths(optionId)
                                             settingsViewModel.updateSmsScanAllTime(false)
                                             showSmsScanDialog = false
                                         }
@@ -780,18 +813,13 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.width(Spacing.md))
                             Text(
-                                text = when (months) {
-                                    -1 -> "All Time"
-                                    -2 -> {
-                                        val formattedDate = smsScanCustomDate?.let { formatSmsScanCustomDate(it) }
-                                        if (formattedDate != null) "Custom date ($formattedDate)" else "Custom date"
-                                    }
-                                    1 -> "1 month"
-                                    24 -> "2 years"
-                                    else -> "$months months"
-                                },
+                                text = smsScanPeriodOptionLabel(
+                                    optionId = optionId,
+                                    customDateMillis = smsScanCustomDate,
+                                ),
                                 style = MaterialTheme.typography.bodyLarge
                             )
+                        }
                         }
                     }
                 }
@@ -1425,4 +1453,33 @@ private fun formatSmsScanCustomDateShort(dateMillis: Long): String {
         .atZone(java.time.ZoneId.systemDefault())
         .toLocalDate()
         .format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+}
+
+private fun smsScanPeriodOptionToDays(optionId: Int): Int? =
+    com.pennywiseai.tracker.data.manager.SmsScanParamsCalculator.scanPeriodSentinelToDays(optionId)
+
+private fun smsScanPeriodOptionLabel(optionId: Int, customDateMillis: Long?): String = when (optionId) {
+    -1 -> "All Time"
+    -2 -> {
+        val formattedDate = customDateMillis?.let { formatSmsScanCustomDate(it) }
+        if (formattedDate != null) "Custom date ($formattedDate)" else "Custom date"
+    }
+    else -> smsScanPeriodOptionToDays(optionId)?.let { formatSmsScanDaysLabel(it) }
+        ?: when (optionId) {
+            1 -> "1 month"
+            24 -> "2 years"
+            else -> "$optionId months"
+        }
+}
+
+private fun formatSmsScanDaysLabel(days: Int): String = when (days) {
+    1 -> "1 day"
+    7 -> "1 week"
+    else -> "$days days"
+}
+
+private fun formatSmsScanDaysShort(days: Int): String = when (days) {
+    1 -> "1 d"
+    7 -> "1 wk"
+    else -> "$days d"
 }

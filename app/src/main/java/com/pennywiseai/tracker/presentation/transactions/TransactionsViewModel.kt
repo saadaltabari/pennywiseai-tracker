@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.presentation.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.dao.TransactionSplitDao
 import com.pennywiseai.tracker.data.database.entity.BudgetImpactType
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
@@ -20,7 +21,6 @@ import com.pennywiseai.tracker.presentation.common.accountOptions
 import com.pennywiseai.tracker.presentation.common.buildProfileAccountKeys
 import com.pennywiseai.tracker.presentation.common.filterTransactionsByAccount
 import com.pennywiseai.tracker.presentation.common.filterTransactionsByProfile
-import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.currency.CurrencyConversionService
 import com.pennywiseai.tracker.data.database.entity.ProfileEntity
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
@@ -479,7 +479,7 @@ class TransactionsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 3
+            initialValue = Constants.SmsProcessing.INITIAL_SCAN_MONTHS
         )
 
     private val smsScanAllTime: StateFlow<Boolean> = userPreferencesRepository.smsScanAllTime
@@ -501,6 +501,20 @@ class TransactionsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
+        )
+
+    private val smsScanUseDays: StateFlow<Boolean> = userPreferencesRepository.smsScanUseDays
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    private val smsScanDays: StateFlow<Int> = userPreferencesRepository.smsScanDays
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = Constants.SmsProcessing.DEFAULT_SCAN_DAYS
         )
 
     fun isShowingLimitedData(): Boolean {
@@ -540,6 +554,10 @@ class TransactionsViewModel @Inject constructor(
                     .atZone(java.time.ZoneId.systemDefault())
                     .toLocalDate()
             }
+        }
+
+        if (smsScanUseDays.value) {
+            return LocalDate.now().minusDays(smsScanDays.value.toLong())
         }
 
         return LocalDate.now().minusMonths(smsScanMonths.value.toLong())

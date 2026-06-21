@@ -506,10 +506,14 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
             val scanMonths = userPreferencesRepository.getSmsScanMonths()
             val scanAllTime = userPreferencesRepository.getSmsScanAllTime()
             val scanUseCustomDate = userPreferencesRepository.getSmsScanUseCustomDate()
+            val scanUseDays = userPreferencesRepository.getSmsScanUseDays()
+            val scanDays = userPreferencesRepository.getSmsScanDays()
             userPreferencesRepository.setLastScanPeriod(
                 SmsScanParamsCalculator.resolveLastScanPeriod(
                     scanAllTime = scanAllTime,
                     scanUseCustomDate = scanUseCustomDate,
+                    scanUseDays = scanUseDays,
+                    scanDays = scanDays,
                     scanMonths = scanMonths,
                 )
             )
@@ -942,6 +946,8 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
                 scanAllTime = userPreferencesRepository.getSmsScanAllTime(),
                 scanUseCustomDate = userPreferencesRepository.getSmsScanUseCustomDate(),
                 scanCustomDateMillis = userPreferencesRepository.getSmsScanCustomDate(),
+                scanUseDays = userPreferencesRepository.getSmsScanUseDays(),
+                scanDays = userPreferencesRepository.getSmsScanDays(),
                 lastScanPeriod = userPreferencesRepository.getLastScanPeriod().first(),
                 nowMillis = System.currentTimeMillis(),
             )

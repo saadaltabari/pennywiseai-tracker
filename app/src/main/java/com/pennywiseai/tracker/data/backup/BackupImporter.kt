@@ -700,6 +700,8 @@ class BackupImporter @Inject constructor(
         preferences.sms.smsScanCustomDate?.let {
             userPreferencesRepository.updateSmsScanCustomDate(it)
         }
+        userPreferencesRepository.updateSmsScanUseDays(preferences.sms.smsScanUseDays)
+        userPreferencesRepository.updateSmsScanDays(preferences.sms.smsScanDays)
         preferences.sms.lastScanTimestamp?.let {
             userPreferencesRepository.updateLastScanTimestamp(it)
         }

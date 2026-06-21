@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.data.backup
 
 import com.pennywiseai.tracker.data.database.entity.*
+import com.pennywiseai.tracker.core.Constants
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
@@ -270,7 +271,13 @@ data class SmsPreferences(
     val smsScanUseCustomDate: Boolean = false,
 
     @SerialName("sms_scan_custom_date")
-    val smsScanCustomDate: Long? = null
+    val smsScanCustomDate: Long? = null,
+
+    @SerialName("sms_scan_use_days")
+    val smsScanUseDays: Boolean = false,
+
+    @SerialName("sms_scan_days")
+    val smsScanDays: Int = Constants.SmsProcessing.DEFAULT_SCAN_DAYS
 )
 
 @Serializable

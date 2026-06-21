@@ -14,11 +14,16 @@ object Constants {
         const val SMS_PREVIEW_LENGTH = 200
         const val QUERY_LIMIT = 100
         const val INITIAL_SCAN_MONTHS = 3
+        const val DEFAULT_SCAN_DAYS = 1
         const val SCANNING_DELAY_MS = 3000L
         /** Stored in [last_scan_period] when SMS scan period is set to all time. */
         const val SCAN_PERIOD_ALL_TIME = -1
         /** Stored in [last_scan_period] when SMS scan period is a custom start date. */
         const val SCAN_PERIOD_CUSTOM_DATE = -2
+        /** Stored in [last_scan_period] for day-based scan periods. */
+        const val SCAN_PERIOD_1_DAY = -3
+        const val SCAN_PERIOD_2_DAYS = -4
+        const val SCAN_PERIOD_1_WEEK = -6
     }
     
     /**

@@ -93,6 +93,8 @@ class BackupExporter @Inject constructor(
         val lastScanPeriod = userPreferencesRepository.getLastScanPeriod().first()
         val smsScanUseCustomDate = userPreferencesRepository.getSmsScanUseCustomDate()
         val smsScanCustomDate = userPreferencesRepository.getSmsScanCustomDate()
+        val smsScanUseDays = userPreferencesRepository.getSmsScanUseDays()
+        val smsScanDays = userPreferencesRepository.getSmsScanDays()
         
         // Calculate statistics
         val dateRange = if (transactions.isNotEmpty()) {
@@ -204,7 +206,9 @@ class BackupExporter @Inject constructor(
                     lastScanTimestamp = lastScanTimestamp,
                     lastScanPeriod = lastScanPeriod,
                     smsScanUseCustomDate = smsScanUseCustomDate,
-                    smsScanCustomDate = smsScanCustomDate
+                    smsScanCustomDate = smsScanCustomDate,
+                    smsScanUseDays = smsScanUseDays,
+                    smsScanDays = smsScanDays
                 ),
                 developer = DeveloperPreferences(
                     isDeveloperModeEnabled = prefs.isDeveloperModeEnabled,

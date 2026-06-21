@@ -635,5 +635,7 @@ class BackupModelsTest {
         assertEquals(6, sms.smsScanMonths)
         assertFalse(sms.smsScanUseCustomDate)
         assertNull(sms.smsScanCustomDate)
+        assertFalse(sms.smsScanUseDays)
+        assertEquals(1, sms.smsScanDays)
     }
 }
