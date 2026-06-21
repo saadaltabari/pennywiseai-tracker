@@ -114,6 +114,8 @@ class SmsScanParamsCalculatorTest {
             scanAllTime = false,
             scanUseCustomDate = true,
             scanCustomDateMillis = null,
+            scanUseDays = false,
+            scanDays = 1,
             scanMonths = 3,
             nowMillis = nowMillis,
             zoneId = zoneId,
@@ -129,6 +131,89 @@ class SmsScanParamsCalculatorTest {
             SmsScanParamsCalculator.resolveLastScanPeriod(
                 scanAllTime = false,
                 scanUseCustomDate = true,
+                scanUseDays = false,
+                scanDays = 1,
+                scanMonths = 3,
+            ),
+        )
+    }
+
+    @Test
+    fun `day based scan period uses selected day count`() {
+        val expectedStart = SmsScanParamsCalculator.dayBasedScanStartTime(7, nowMillis, zoneId)
+
+        val params = SmsScanParamsCalculator.compute(
+            SmsScanParamsInput(
+                lastScanTimestamp = 0L,
+                scanMonths = 3,
+                scanAllTime = false,
+                scanUseCustomDate = false,
+                scanUseDays = true,
+                scanDays = 7,
+                lastScanPeriod = Constants.SmsProcessing.SCAN_PERIOD_1_WEEK,
+                nowMillis = nowMillis,
+            ),
+            zoneId = zoneId,
+        )
+
+        assertTrue(params.needsFullScan)
+        assertEquals(expectedStart, params.scanStartTime)
+    }
+
+    @Test
+    fun `switching to day based period from months triggers full scan`() {
+        val expectedStart = SmsScanParamsCalculator.dayBasedScanStartTime(1, nowMillis, zoneId)
+
+        val params = SmsScanParamsCalculator.compute(
+            SmsScanParamsInput(
+                lastScanTimestamp = nowMillis - TimeConstants.MILLIS_PER_DAY,
+                scanMonths = 3,
+                scanAllTime = false,
+                scanUseCustomDate = false,
+                scanUseDays = true,
+                scanDays = 1,
+                lastScanPeriod = 3,
+                nowMillis = nowMillis,
+            ),
+            zoneId = zoneId,
+        )
+
+        assertTrue(params.needsFullScan)
+        assertEquals(expectedStart, params.scanStartTime)
+    }
+
+    @Test
+    fun `increasing day based scan period triggers full scan`() {
+        val params = SmsScanParamsCalculator.compute(
+            SmsScanParamsInput(
+                lastScanTimestamp = nowMillis - TimeConstants.MILLIS_PER_DAY,
+                scanMonths = 3,
+                scanAllTime = false,
+                scanUseCustomDate = false,
+                scanUseDays = true,
+                scanDays = 7,
+                lastScanPeriod = Constants.SmsProcessing.SCAN_PERIOD_1_DAY,
+                nowMillis = nowMillis,
+            ),
+            zoneId = zoneId,
+        )
+
+        assertTrue(params.needsFullScan)
+        assertEquals(
+            SmsScanParamsCalculator.dayBasedScanStartTime(7, nowMillis, zoneId),
+            params.scanStartTime,
+        )
+    }
+
+    @Test
+    fun `resolveLastScanPeriod stores day based sentinel`() {
+        assertEquals(
+            Constants.SmsProcessing.SCAN_PERIOD_1_WEEK,
+            SmsScanParamsCalculator.resolveLastScanPeriod(
+                scanAllTime = false,
+                scanUseCustomDate = false,
+                scanUseDays = true,
+                scanDays = 7,
                 scanMonths = 3,
             ),
         )

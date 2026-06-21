@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.pennywiseai.tracker.core.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -64,6 +65,8 @@ class UserPreferencesRepository @Inject constructor(
         val SMS_SCAN_ALL_TIME = booleanPreferencesKey("sms_scan_all_time")
         val SMS_SCAN_USE_CUSTOM_DATE = booleanPreferencesKey("sms_scan_use_custom_date")
         val SMS_SCAN_CUSTOM_DATE = longPreferencesKey("sms_scan_custom_date")
+        val SMS_SCAN_USE_DAYS = booleanPreferencesKey("sms_scan_use_days")
+        val SMS_SCAN_DAYS = intPreferencesKey("sms_scan_days")
         val LAST_SCAN_TIMESTAMP = longPreferencesKey("last_scan_timestamp")
         val LAST_SCAN_PERIOD = intPreferencesKey("last_scan_period")
         val BASE_CURRENCY = stringPreferencesKey("base_currency")
@@ -156,8 +159,9 @@ class UserPreferencesRepository @Inject constructor(
                 hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false,
                 isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false,
                 hasShownScanTutorial = preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] ?: false,
-                smsScanMonths = preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3,
-                smsScanAllTime = preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: true,
+                smsScanMonths = preferences[PreferencesKeys.SMS_SCAN_MONTHS]
+                    ?: Constants.SmsProcessing.INITIAL_SCAN_MONTHS,
+                smsScanAllTime = preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: false,
                 baseCurrency = preferences[PreferencesKeys.BASE_CURRENCY] ?: "INR",
                 unifiedCurrencyMode = preferences[PreferencesKeys.UNIFIED_CURRENCY_MODE] ?: false,
                 displayCurrency = preferences[PreferencesKeys.DISPLAY_CURRENCY]
@@ -288,7 +292,7 @@ class UserPreferencesRepository @Inject constructor(
     
     val smsScanMonths: Flow<Int> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 // Default to 3 months
+            preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: Constants.SmsProcessing.INITIAL_SCAN_MONTHS
         }
     
     suspend fun updateSmsScanMonths(months: Int) {
@@ -299,13 +303,13 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun getSmsScanMonths(): Int {
         return context.dataStore.data
-            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 }
+            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: Constants.SmsProcessing.INITIAL_SCAN_MONTHS }
             .first()
     }
 
     val smsScanAllTime: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: true
+            preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: false
         }
 
     suspend fun updateSmsScanAllTime(allTime: Boolean) {
@@ -316,7 +320,7 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun getSmsScanAllTime(): Boolean {
         return context.dataStore.data
-            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: true }
+            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: false }
             .first()
     }
 
@@ -349,6 +353,40 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun getSmsScanCustomDate(): Long? {
         return context.dataStore.data
             .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_CUSTOM_DATE] }
+            .first()
+    }
+
+    val smsScanUseDays: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_USE_DAYS] ?: true
+        }
+
+    suspend fun updateSmsScanUseDays(useDays: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_USE_DAYS] = useDays
+        }
+    }
+
+    suspend fun getSmsScanUseDays(): Boolean {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_USE_DAYS] ?: true }
+            .first()
+    }
+
+    val smsScanDays: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_DAYS] ?: Constants.SmsProcessing.DEFAULT_SCAN_DAYS
+        }
+
+    suspend fun updateSmsScanDays(days: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_DAYS] = days
+        }
+    }
+
+    suspend fun getSmsScanDays(): Int {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_DAYS] ?: Constants.SmsProcessing.DEFAULT_SCAN_DAYS }
             .first()
     }
     
@@ -807,8 +845,8 @@ data class UserPreferences(
     val hasSkippedSmsPermission: Boolean = false,
     val isDeveloperModeEnabled: Boolean = false,
     val hasShownScanTutorial: Boolean = false,
-    val smsScanMonths: Int = 3,
-    val smsScanAllTime: Boolean = true,
+    val smsScanMonths: Int = Constants.SmsProcessing.INITIAL_SCAN_MONTHS,
+    val smsScanAllTime: Boolean = false,
     val baseCurrency: String = "INR",
     val unifiedCurrencyMode: Boolean = false,
     val displayCurrency: String = "INR",

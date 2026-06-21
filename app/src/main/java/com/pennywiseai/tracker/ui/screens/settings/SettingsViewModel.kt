@@ -106,6 +106,8 @@ class SettingsViewModel @Inject constructor(
     val smsScanAllTime = userPreferencesRepository.smsScanAllTime
     val smsScanUseCustomDate = userPreferencesRepository.smsScanUseCustomDate
     val smsScanCustomDate = userPreferencesRepository.smsScanCustomDate
+    val smsScanUseDays = userPreferencesRepository.smsScanUseDays
+    val smsScanDays = userPreferencesRepository.smsScanDays
 
     // Unified Currency Mode
     val unifiedCurrencyMode = userPreferencesRepository.unifiedCurrencyMode
@@ -493,7 +495,25 @@ class SettingsViewModel @Inject constructor(
             }
 
             userPreferencesRepository.updateSmsScanUseCustomDate(false)
+            userPreferencesRepository.updateSmsScanUseDays(false)
             userPreferencesRepository.updateSmsScanMonths(months)
+        }
+    }
+
+    fun updateSmsScanDays(days: Int) {
+        viewModelScope.launch {
+            val wasUsingDays = userPreferencesRepository.getSmsScanUseDays()
+            val currentDays = userPreferencesRepository.getSmsScanDays()
+
+            if (!wasUsingDays || days > currentDays) {
+                userPreferencesRepository.setLastScanTimestamp(0L)
+                Log.d("SettingsViewModel", "SMS scan period set to $days days - will perform full scan")
+            }
+
+            userPreferencesRepository.updateSmsScanUseCustomDate(false)
+            userPreferencesRepository.updateSmsScanAllTime(false)
+            userPreferencesRepository.updateSmsScanUseDays(true)
+            userPreferencesRepository.updateSmsScanDays(days)
         }
     }
 
@@ -506,6 +526,7 @@ class SettingsViewModel @Inject constructor(
             }
 
             userPreferencesRepository.updateSmsScanUseCustomDate(false)
+            userPreferencesRepository.updateSmsScanUseDays(false)
             userPreferencesRepository.updateSmsScanAllTime(allTime)
         }
     }
@@ -522,6 +543,7 @@ class SettingsViewModel @Inject constructor(
             }
 
             userPreferencesRepository.updateSmsScanAllTime(false)
+            userPreferencesRepository.updateSmsScanUseDays(false)
             userPreferencesRepository.updateSmsScanUseCustomDate(true)
             userPreferencesRepository.updateSmsScanCustomDate(normalizedDate)
         }
